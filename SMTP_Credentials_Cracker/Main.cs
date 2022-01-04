@@ -13,12 +13,12 @@ namespace SMTP_Credentials_Cracker
     {
         private readonly List<string> _hits = new();
         private string _wordlistPath, _host;
-        private int _port,  _currentLine, _failedCounter, _hitsCounter;
+        private int _port, _currentLine, _failedCounter, _hitsCounter;
         private long _linesCount;
 
         public Main()
         {
-            InitializeComponent(); 
+            InitializeComponent();
             textBox1.AutoSize = false;
             textBox1.Size = new Size(395, 25);
         }
@@ -36,17 +36,15 @@ namespace SMTP_Credentials_Cracker
                 return result;
             }
 
-            catch(Exception)
+            catch (Exception)
             {
                 return false;
             }
-
         }
-        
+
 
         private void button1_Click(object sender, EventArgs e)
         {
-            
         }
 
         private void button1_Click_1(object sender, EventArgs e)
@@ -71,12 +69,11 @@ namespace SMTP_Credentials_Cracker
 
         private void Form1_Load(object sender, EventArgs e)
         {
-
         }
 
         private void ProcessLine(object line)
         {
-            var _line = (string[])line;
+            var _line = (string[]) line;
 
             if (TryAuthenticate(_line[0], _line[1], _host, _port))
             {
@@ -91,29 +88,25 @@ namespace SMTP_Credentials_Cracker
 
         private void ProgressWatcher()
         {
-            while(_currentLine < _linesCount)
+            while (_currentLine < _linesCount)
             {
                 //Thread thisThread = Thread.CurrentThread;
 
-                progressLabel.Invoke((MethodInvoker) delegate {
+                progressLabel.Invoke((MethodInvoker) delegate
+                {
                     progressLabel.Text = $@"Progress {_currentLine} of {_linesCount}";
                 });
 
-                textBoxWorkingThreads.Invoke((MethodInvoker)delegate {
+                textBoxWorkingThreads.Invoke((MethodInvoker) delegate
+                {
                     textBoxWorkingThreads.Text = ThreadPool.ThreadCount.ToString();
                 });
 
-                progressBar1.Invoke((MethodInvoker)delegate {
-                    progressBar1.Value++;
-                });
+                progressBar1.Invoke((MethodInvoker) delegate { progressBar1.Value++; });
 
-                textBoxSuccess.Invoke((MethodInvoker)delegate {
-                    textBoxSuccess.Text = _hitsCounter.ToString();
-                });
-                
-                textBoxSuccess.Invoke((MethodInvoker)delegate {
-                    textBoxFailed.Text = _failedCounter.ToString();
-                });
+                textBoxSuccess.Invoke((MethodInvoker) delegate { textBoxSuccess.Text = _hitsCounter.ToString(); });
+
+                textBoxSuccess.Invoke((MethodInvoker) delegate { textBoxFailed.Text = _failedCounter.ToString(); });
 
                 Thread.Sleep(100);
             }
@@ -130,7 +123,7 @@ namespace SMTP_Credentials_Cracker
                 textBox1.Text = _wordlistPath;
                 _linesCount = CountLines();
                 progressLabel.Text = $@"Progress {_currentLine} of {_linesCount}";
-                progressBar1.Maximum = (int)_linesCount;
+                progressBar1.Maximum = (int) _linesCount;
             }
         }
 
@@ -147,8 +140,7 @@ namespace SMTP_Credentials_Cracker
                 for (var i = 0; i < bytesRead; i++)
                     if (buffer[i] == '\n')
                         lineCount++;
-            }
-            while (bytesRead > 0);
+            } while (bytesRead > 0);
 
             fs.Close();
 
